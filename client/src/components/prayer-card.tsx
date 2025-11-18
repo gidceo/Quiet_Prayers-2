@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Prayer } from "@shared/schema";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark, BookmarkCheck, Hand, Share2, MessageSquare } from "lucide-react";
+import { Bookmark, BookmarkCheck, Hand, Share2, MessageSquare, Download, Copy } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { generatePrayerCardImage } from "@/lib/prayer-card-generator";
 import { getSessionId } from "@/lib/session";
@@ -23,6 +24,8 @@ export function PrayerCard({ prayer }: PrayerCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [localLiftUpCount, setLocalLiftUpCount] = useState(prayer.liftUpCount);
   const [showComments, setShowComments] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const { data: prayerComments } = useQuery<PrayerComment[]>({ queryKey: [`/api/prayers/${prayer.id}/comments`] });
 
   // Fetch initial status using apiRequest
@@ -117,41 +120,67 @@ export function PrayerCard({ prayer }: PrayerCardProps) {
   const handleShare = async () => {
     try {
       const imageDataUrl = await generatePrayerCardImage(prayer);
-      
-      const blob = await (await fetch(imageDataUrl)).blob();
-      const file = new File([blob], 'prayer-card.png', { type: 'image/png' });
-
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Prayer Request',
-          text: 'Join me in prayer',
-          files: [file],
-        });
-      } else {
-        const link = document.createElement('a');
-        link.href = imageDataUrl;
-        link.download = 'prayer-card.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        toast({
-          title: "Image downloaded",
-          description: "Prayer card image has been downloaded to your device.",
-        });
-      }
+      setGeneratedImageUrl(imageDataUrl);
+      setShowShareDialog(true);
     } catch (error) {
       console.error('Share error:', error);
       toast({
         title: "Error",
-        description: "Failed to share prayer. Please try again.",
+        description: "Failed to generate prayer card. Please try again.",
         variant: "destructive",
       });
     }
   };
 
+  const handleDownloadImage = () => {
+    if (!generatedImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = generatedImageUrl;
+    link.download = `prayer-card-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Downloaded",
+      description: "Prayer card saved to your device.",
+    });
+  };
+
+  const handleCopyText = () => {
+    const shareText = `${prayer.content}\n\n${prayer.isAnonymous || !prayer.authorName ? '— Anonymous' : `— ${prayer.authorName}`}\n\nShared from QuietPrayers`;
+    navigator.clipboard.writeText(shareText);
+    toast({
+      title: "Copied",
+      description: "Prayer text copied to clipboard.",
+    });
+  };
+
+  const handleSocialShare = (platform: string) => {
+    const text = encodeURIComponent(`Join me in prayer: ${prayer.content.substring(0, 100)}${prayer.content.length > 100 ? '...' : ''}`);
+    const url = encodeURIComponent(window.location.href);
+    
+    let shareUrl = '';
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${text}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${text}`;
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+  };
+
   return (
-    <Card className="relative" data-testid={`card-prayer-${prayer.id}`}>
+    <Card className="relative hover:shadow-lg transition-shadow duration-200 border-l-4 border-l-primary/30" data-testid={`card-prayer-${prayer.id}`}>
       <Button
         variant="ghost"
         size="icon"
@@ -168,8 +197,8 @@ export function PrayerCard({ prayer }: PrayerCardProps) {
       </Button>
 
       <CardContent className="pt-6 pb-4">
-        <div className="mb-4 pr-10">
-          <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap" data-testid={`text-prayer-content-${prayer.id}`}>
+        <div className="mb-5 pr-10">
+          <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap font-body" data-testid={`text-prayer-content-${prayer.id}`}>
             {prayer.content}
           </p>
         </div>
@@ -225,23 +254,127 @@ export function PrayerCard({ prayer }: PrayerCardProps) {
         </div>
       </CardContent>
       {showComments && (
-        <div className="px-6 pb-6">
-          <div className="space-y-3 mb-3">
+        <div className="border-t mt-4 pt-4 px-6 pb-6 bg-muted/20">
+          <h3 className="text-sm font-semibold mb-4 text-foreground">Encouragement & Prayers</h3>
+          
+          <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
             {prayerComments && prayerComments.length > 0 ? (
               prayerComments.map(c => (
-                <div key={c.id} className="rounded border p-2">
-                  <div className="text-sm text-muted-foreground">{c.authorName || (c.isAnonymous ? 'Anonymous' : '')}</div>
-                  <div className="mt-1">{c.content}</div>
+                <div key={c.id} className="bg-background rounded-lg border border-border p-3 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                      {(c.authorName || 'A').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {c.authorName || 'Anonymous'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">
+                        {c.content}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))
             ) : (
-              <div className="text-sm text-muted-foreground">No comments yet. Be the first to encourage.</div>
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground italic">
+                  No comments yet. Be the first to offer encouragement.
+                </p>
+              </div>
             )}
           </div>
 
           <PrayerCommentForm prayerId={prayer.id} />
         </div>
       )}
+
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Prayer</DialogTitle>
+            <DialogDescription>
+              Choose how you'd like to share this prayer request
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {generatedImageUrl && (
+              <div className="flex justify-center">
+                <img 
+                  src={generatedImageUrl} 
+                  alt="Prayer card" 
+                  className="max-w-full h-auto rounded-lg border shadow-sm"
+                  style={{ maxHeight: '300px' }}
+                />
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Button
+                onClick={handleDownloadImage}
+                className="w-full gap-2"
+                variant="default"
+              >
+                <Download className="h-4 w-4" />
+                Download Image
+              </Button>
+
+              <Button
+                onClick={handleCopyText}
+                className="w-full gap-2"
+                variant="outline"
+              >
+                <Copy className="h-4 w-4" />
+                Copy Prayer Text
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Share on social media
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  onClick={() => handleSocialShare('facebook')}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  Facebook
+                </Button>
+                <Button
+                  onClick={() => handleSocialShare('twitter')}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  Twitter
+                </Button>
+                <Button
+                  onClick={() => handleSocialShare('whatsapp')}
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                >
+                  WhatsApp
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

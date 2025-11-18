@@ -76,6 +76,7 @@ export const insertPrayerSchema = createInsertSchema(prayers).omit({
   liftUpCount: true,
   isModerated: true,
   createdAt: true,
+  isAnonymous: true,
 }).extend({
   content: z.string().min(10, "Prayer must be at least 10 characters").max(1000, "Prayer must be less than 1000 characters"),
   category: z.enum(['Faith', 'Health', 'Relationships', 'Work', 'Other'] as const).optional(),
@@ -86,6 +87,7 @@ export const insertQuestionSchema = createInsertSchema(questions).omit({
   id: true,
   isModerated: true,
   createdAt: true,
+  isAnonymous: true,
 }).extend({
   title: z.string().min(5, "Title must be at least 5 characters").max(200),
   content: z.string().min(10, "Question must be at least 10 characters").max(2000),
@@ -97,6 +99,7 @@ export const insertCommentSchema = createInsertSchema(comments).omit({
   questionId: true,
   isModerated: true,
   createdAt: true,
+  isAnonymous: true,
 }).extend({
   content: z.string().min(1, "Comment cannot be empty").max(1000),
   authorName: z.string().max(100).optional(),
@@ -107,6 +110,7 @@ export const insertPrayerCommentSchema = createInsertSchema(prayerComments).omit
   prayerId: true,
   isModerated: true,
   createdAt: true,
+  isAnonymous: true,
 }).extend({
   content: z.string().min(1, "Comment cannot be empty").max(1000),
   authorName: z.string().max(100).optional(),

@@ -14,7 +14,7 @@ export function PrayerCommentForm({ prayerId }: { prayerId: string }) {
 
   const form = useForm<InsertPrayerComment>({
     resolver: zodResolver(insertPrayerCommentSchema),
-    defaultValues: { content: "", authorName: "", isAnonymous: false },
+    defaultValues: { content: "", authorName: "" },
   });
 
   const createCommentMutation = useMutation({
@@ -36,39 +36,44 @@ export function PrayerCommentForm({ prayerId }: { prayerId: string }) {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 bg-background p-4 rounded-lg border">
       <Form {...form}>
         <FormField
           control={form.control}
           name="content"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Your comment</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Share encouragement or an answer..." />
+                <Textarea 
+                  {...field} 
+                  placeholder="Share encouragement or a prayer..." 
+                  className="resize-none"
+                  rows={3}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="authorName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name (Optional)</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Your name" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex items-end gap-2">
+          <FormField
+            control={form.control}
+            name="authorName"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormControl>
+                  <Input {...field} placeholder="Your name (optional)" className="h-9" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button type="submit" disabled={createCommentMutation.isPending}>
-          {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
-        </Button>
+          <Button type="submit" disabled={createCommentMutation.isPending} size="sm" className="h-9">
+            {createCommentMutation.isPending ? 'Posting...' : 'Post'}
+          </Button>
+        </div>
       </Form>
     </form>
   );

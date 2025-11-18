@@ -24,7 +24,16 @@ export function CloudHeader() {
           </p>
         </div>
 
-        <div className="absolute top-4 right-4 flex space-x-2">
+        <div className="absolute top-4 right-4 flex flex-wrap gap-2 justify-end">
+          <Link href="/">
+            <Button
+              variant="outline"
+              className="bg-background/20 backdrop-blur-md border-white/30 text-white hover:bg-background/30"
+            >
+              Prayer Requests
+            </Button>
+          </Link>
+
           <Link href="/q-and-a">
             <Button
               variant="outline"
@@ -41,7 +50,7 @@ export function CloudHeader() {
               data-testid="button-view-bookmarks"
             >
               <Bookmark className="h-4 w-4 mr-2" />
-              Saved Prayers
+              Saved
             </Button>
           </Link>
         </div>

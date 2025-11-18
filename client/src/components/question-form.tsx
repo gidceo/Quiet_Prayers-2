@@ -9,7 +9,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Switch } from "./ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle, Send } from "lucide-react";
@@ -23,7 +22,6 @@ export function QuestionForm() {
     defaultValues: {
       title: "",
       content: "",
-      isAnonymous: false,
       authorName: "",
     },
   });
@@ -60,8 +58,6 @@ export function QuestionForm() {
     setModerationError(null);
     createQuestionMutation.mutate(data);
   };
-
-  const isAnonymous = form.watch("isAnonymous");
 
   return (
     <Card>
@@ -108,35 +104,20 @@ export function QuestionForm() {
 
             <FormField
               control={form.control}
-              name="isAnonymous"
+              name="authorName"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Post Anonymously</FormLabel>
-                    <div className="text-sm text-muted-foreground">Your name will not be shown</div>
-                  </div>
+                <FormItem>
+                  <FormLabel>Your Name (Optional)</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Input {...field} placeholder="Leave blank to post anonymously" />
                   </FormControl>
+                  <div className="text-sm text-muted-foreground">
+                    If you don't enter a name, your question will be posted anonymously
+                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
-            {!isAnonymous && (
-              <FormField
-                control={form.control}
-                name="authorName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter your name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <Button type="submit" className="w-full" disabled={createQuestionMutation.isPending}>
               {createQuestionMutation.isPending ? (

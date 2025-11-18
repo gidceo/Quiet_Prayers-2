@@ -20,6 +20,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertPrayerSchema.parse(req.body);
       
+      // Auto-detect anonymity based on author name
+      const isAnonymous = !data.authorName || data.authorName.trim() === "";
+      
       // Content moderation
       const contentCheck = moderateContent(data.content);
       if (contentCheck.isProfane) {
@@ -33,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const prayer = await storage.createPrayer(data);
+      const prayer = await storage.createPrayer({ ...data, isAnonymous });
       // log created prayer for debugging visibility
       // eslint-disable-next-line no-console
       console.log("Created prayer:", { id: prayer.id, content: prayer.content.slice(0, 80) });
@@ -174,6 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/questions", async (req, res) => {
     try {
       const data = insertQuestionSchema.parse(req.body);
+      
+      // Auto-detect anonymity based on author name
+      const isAnonymous = !data.authorName || data.authorName.trim() === "";
 
       // Content moderation
       const titleCheck = moderateContent(data.title);
@@ -186,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: contentCheck.message });
       }
 
-      const question = await storage.createQuestion(data);
+      const question = await storage.createQuestion({ ...data, isAnonymous });
       res.status(201).json(question);
     } catch (error: any) {
       if (error.errors) {
@@ -214,6 +220,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { questionId } = req.params;
       const body = { ...req.body, questionId };
       const data = insertCommentSchema.parse(body);
+      
+      // Auto-detect anonymity based on author name
+      const isAnonymous = !data.authorName || data.authorName.trim() === "";
 
       // Moderate comment content
       const contentCheck = moderateContent(data.content);
@@ -221,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: contentCheck.message });
       }
 
-      const comment = await storage.createComment({ ...data, questionId });
+      const comment = await storage.createComment({ ...data, questionId, isAnonymous });
       res.status(201).json(comment);
     } catch (error: any) {
       if (error.errors) {
@@ -249,13 +258,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { prayerId } = req.params;
       const body = { ...req.body, prayerId };
       const data = insertPrayerCommentSchema.parse(body);
+      
+      // Auto-detect anonymity based on author name
+      const isAnonymous = !data.authorName || data.authorName.trim() === "";
 
       const contentCheck = moderateContent(data.content);
       if (contentCheck.isProfane) {
         return res.status(400).json({ error: contentCheck.message });
       }
 
-      const comment = await storage.createPrayerComment({ ...data, prayerId });
+      const comment = await storage.createPrayerComment({ ...data, prayerId, isAnonymous });
       res.status(201).json(comment);
     } catch (error: any) {
       if (error.errors) {

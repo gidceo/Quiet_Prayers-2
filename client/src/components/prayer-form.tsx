@@ -9,7 +9,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Switch } from "./ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle, Send } from "lucide-react";
@@ -22,7 +21,6 @@ export function PrayerForm() {
     resolver: zodResolver(insertPrayerSchema),
     defaultValues: {
       content: "",
-      isAnonymous: false,
       authorName: "",
     },
   });
@@ -83,12 +81,10 @@ export function PrayerForm() {
     createPrayerMutation.mutate(data);
   };
 
-  const isAnonymous = form.watch("isAnonymous");
-
   return (
-    <Card data-testid="card-prayer-form">
-      <CardHeader>
-        <CardTitle className="text-2xl">Share a Prayer Request</CardTitle>
+    <Card className="shadow-md hover:shadow-lg transition-shadow" data-testid="card-prayer-form">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-2xl font-semibold">Share a Prayer Request</CardTitle>
       </CardHeader>
       <CardContent>
         {moderationError && (
@@ -121,45 +117,24 @@ export function PrayerForm() {
 
             <FormField
               control={form.control}
-              name="isAnonymous"
+              name="authorName"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Post Anonymously</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Your name will not be shown
-                    </div>
-                  </div>
+                <FormItem>
+                  <FormLabel>Your Name (Optional)</FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      data-testid="switch-anonymous"
+                    <Input
+                      {...field}
+                      placeholder="Leave blank to post anonymously"
+                      data-testid="input-author-name"
                     />
                   </FormControl>
+                  <div className="text-sm text-muted-foreground">
+                    If you don't enter a name, your prayer will be posted anonymously
+                  </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-
-            {!isAnonymous && (
-              <FormField
-                control={form.control}
-                name="authorName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter your name"
-                        data-testid="input-author-name"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <Button
               type="submit"
