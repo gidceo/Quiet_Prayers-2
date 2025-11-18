@@ -9,6 +9,19 @@ export async function generatePrayerCardImage(prayer: Prayer): Promise<string> {
   container.style.width = '600px';
   container.style.height = '750px';
   
+  // Truncate content smartly - prefer whole words and reasonable length
+  const maxLength = 280; // Character limit for better readability
+  let displayContent = prayer.content;
+  
+  if (prayer.content.length > maxLength) {
+    // Find the last space before maxLength to avoid cutting words
+    const truncateAt = prayer.content.lastIndexOf(' ', maxLength);
+    displayContent = prayer.content.substring(0, truncateAt > 0 ? truncateAt : maxLength) + '...';
+  }
+  
+  // Escape quotes for HTML
+  const escapedContent = displayContent.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  
   container.innerHTML = `
     <div style="
       width: 600px;
@@ -40,8 +53,11 @@ export async function generatePrayerCardImage(prayer: Prayer): Promise<string> {
           margin: 0 0 30px 0;
           max-height: 500px;
           overflow: hidden;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: pre-wrap;
         ">
-          "${prayer.content.length > 300 ? prayer.content.substring(0, 300) + '...' : prayer.content}"
+          ${escapedContent}
         </p>
         
         <div style="

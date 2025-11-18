@@ -198,7 +198,7 @@ export function PrayerCard({ prayer }: PrayerCardProps) {
 
       <CardContent className="pt-6 pb-4">
         <div className="mb-5 pr-10">
-          <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap font-body" data-testid={`text-prayer-content-${prayer.id}`}>
+          <p className="text-base text-foreground leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere font-body" data-testid={`text-prayer-content-${prayer.id}`}>
             {prayer.content}
           </p>
         </div>
